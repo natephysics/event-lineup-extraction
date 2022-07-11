@@ -1,5 +1,6 @@
 from msilib.schema import Component
 from pytorch_lightning import LightningDataModule
+from torch.utils.data import DataLoader
 from src.datamodules.components import event_data
 from numpy import split
 from torch import seed
@@ -44,9 +45,40 @@ class BertDataModule(LightningDataModule):
             self.data_test_data = event_data(data.sample(frac=1, random_state=self.seed))
         return super().setup(stage)
 
-    def __len__(self, stage: Optional[str] = None):
-        if stage() == "test":
-            return len(self.data_test_data)
-        else:
-            return len(self.data_train_data)
+    def train_dataloader(self) -> TRAIN_DATALOADERS:
+        return DataLoader(
+            self.data_train_data,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            persistent_workers=bool(self.num_workers)
+        )
+
+    def val_dataloader(self) -> EVAL_DATALOADERS:
+        return DataLoader(
+            self.data_val_data,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            persistent_workers=bool(self.num_workers)
+        )
+    
+    def test_dataloader(self) -> EVAL_DATALOADERS:
+        return DataLoader(
+            self.data_test_data,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory,
+            persistent_workers=bool(self.num_workers)
+        )
+
+    def __repr__(self) -> str:
+        return (
+            self.__class__.__name__
+            + f"batch_size={self.batch_size}, "
+            + f"pin_memory={self.pin_memory}, "
+            + f"num_workers={self.num_workers}"
+        )
+    
+    
 
