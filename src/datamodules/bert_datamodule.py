@@ -79,6 +79,3 @@ class BertDataModule(LightningDataModule):
             + f"pin_memory={self.pin_memory}, "
             + f"num_workers={self.num_workers}"
         )
-    
-    
-
