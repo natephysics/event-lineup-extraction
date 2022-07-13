@@ -1,2 +1,10 @@
+_target_: src.datamodules.mnist_datamodule.BertDataModule
+
 # global seed
 seed: 10
+
+transforms: none
+pin_memory: True
+batch_size: 10
+num_workers: 0
+log_training: False
