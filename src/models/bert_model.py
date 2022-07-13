@@ -79,6 +79,8 @@ class BertModel(pl.LightningModule):
                 if batch_idx != 0:
                     self.log(f"train/{layer}.max_grad", torch.max(param.grad))
 
+        return loss
+
     def validation_step(self, batch: any, batch_idx: int):
         loss, pred_label, true_label = self.step(batch, batch_idx)
         self.log("val/loss", loss)
