@@ -1,8 +1,12 @@
 # --------- pytorch --------- #
 torch>=1.10.0
 torchvision>=0.11.0
-pytorch-lightning>=1.5.10
+pytorch-lightning>=1.6.0
 torchmetrics>=0.7.0
+
+# # --------- NLP --------- #
+transformers>=4.20.1
+
 
 # --------- hydra --------- #
 hydra-core>=1.1.0
@@ -12,9 +16,9 @@ hydra-optuna-sweeper>=1.1.0
 # --------- loggers --------- #
 # wandb
 # neptune-client
-# mlflow
+mlflow
 # comet-ml
-# tensorboard
+tensorboard
 
 # --------- linters --------- #
 pre-commit      # hooks for applying linters on commit
@@ -29,3 +33,8 @@ rich            # beautiful text formatting in terminal
 pytest          # tests
 sh              # for running bash commands in some tests
 pudb            # debugger
+pandas          # data analysis/cleaning 
+fuzzywuzzy      # fuzzy string matching
+python-Levenshtein # string similarity
+numpy          # numerical computation
+python-dotenv   # loading env variables from .env file
