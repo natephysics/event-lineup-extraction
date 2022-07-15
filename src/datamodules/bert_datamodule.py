@@ -2,7 +2,7 @@ import pandas as pd
 from msilib.schema import Component
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from src.datamodules.components import event_data
+from src.datamodules.components.event_data import EventDataSequence
 from numpy import split
 from torch import seed
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
@@ -40,27 +40,20 @@ class BertDataModule(LightningDataModule):
                 self.seed = int(environ["PL_GLOBAL_SEED"])
         except (TypeError, ValueError):
             self.seed = 42
-    
-    def prepare_data(self, stage: Optional[str] = None) -> Component:
-        if stage == "test":
-            data_path = path.join(self.data_dir, "test_data.csv")
-            data = pd.read_csv(data_path, sep='\t', dtype = str, names=['event_names', 'labels']) 
-
-        else:
-            data_path = path.join(self.data_dir, "train_data.csv")
-            data = pd.read_csv(data_path, sep='\t', dtype = str, names=['event_names', 'labels']) 
-        return data
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage == "fit":
-            data = self.prepare_data("fit")
+            data_path = path.join(self.data_dir, "train_data.csv")
+            data = pd.read_csv(data_path, sep='\t', dtype = str)
             data_train, data_val = split(data.sample(frac=1, random_state=self.seed), [int(len(data) * self.train_val_split)])
-            self.data_train_data = event_data(data_train)
-            self.data_val_data = event_data(data_val)
+            self.data_train_data = EventDataSequence(data_train)
+            self.data_val_data = EventDataSequence(data_val)
 
         if stage == "test":
+            data_path = path.join(self.data_dir, "test_data.csv")
+            data = pd.read_csv(data_path, sep='\t', dtype = str)
             data = self.prepare_data("test")
-            self.data_test_data = event_data(data.sample(frac=1, random_state=self.seed))
+            self.data_test_data = EventDataSequence(data.sample(frac=1, random_state=self.seed))
         return super().setup(stage)
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
