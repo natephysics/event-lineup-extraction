@@ -1,0 +1,5 @@
+# docs: https://pytorch.org/docs/stable/generated/torch.optim.SGD.html
+_target_: torch.optim.AdamW
+
+# parameters
+lr: 0.0002

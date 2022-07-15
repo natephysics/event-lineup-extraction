@@ -6,6 +6,8 @@ defaults:
   - datamodule: bert.yaml
   - model: bert.yaml
   - callbacks: default.yaml
+  - metrics: bertscore.yaml
+  - optimizer: SGD.yaml
   - logger: null # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
   - log_dir: default.yaml
@@ -49,8 +51,8 @@ train: True
 # lightning chooses best weights based on the metric specified in checkpoint callback
 test: False
 
-# seed for random number generators in pytorch, numpy and python.random
-seed: null
+# seed for random number generators in pytorch, numpy and python.random. Default is one of the Munchausen numbers
+seed: 3435
 
 # default name for the experiment, determines logging folder path
 # (you can overwrite this name in experiment configs)

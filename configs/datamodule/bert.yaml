@@ -1,10 +1,7 @@
-_target_: src.datamodules.mnist_datamodule.BertDataModule
-
-# global seed
-seed: 10
+_target_: src.datamodules.bert_datamodule.BertDataModule
 
 transforms: none
 pin_memory: True
 batch_size: 10
 num_workers: 0
-log_training: False
+train_val_split: 0.9
