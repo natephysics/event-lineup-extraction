@@ -49,7 +49,7 @@ class EventDataSequence(torch.utils.data.Dataset):
     def get_batch_labels(self, idx):
         return torch.LongTensor(self.labels[idx])
 
-    def align_label(self, text, label):
+    def align_label(self, text, label, max_length=30):
         """Aligns the label to the tokenized input text. 
         This is necessary because the tokenization will change the length of the label.
         
@@ -60,7 +60,7 @@ class EventDataSequence(torch.utils.data.Dataset):
         Returns:
             Length matched label ids.
         """
-        tokenized_inputs = self.tokenizer(text, padding='max_length', max_length=512, truncation=True)
+        
         word_ids = text.word_ids()
 
         previous_word_idx = None
