@@ -39,13 +39,27 @@ def train(config: DictConfig) -> Optional[float]:
             hydra.utils.get_original_cwd(), ckpt_path
         )
 
+    # set the memory pinning strategy
+    pin_memory = False
+    if config.trainer.gpus is not None and config.trainer.gpus != 0:
+        pin_memory = True
+
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
-    datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)
+    datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule, config.data_dir)
+    datamodule.setup("fit")
+    # get the number of labels
+    num_labels = len(datamodule.data_train_data.unique_labels)
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
-    model: LightningModule = hydra.utils.instantiate(config.model)
+    model: LightningModule = hydra.utils.instantiate(
+        config.model,
+        num_labels=num_labels,
+        optimizer=config.optimizer,
+        metrics=config.metrics,
+        _recursive_=False, # for hydra (won't recursively instantiate criterion)
+    )
 
     # Init lightning callbacks
     callbacks: List[Callback] = []
