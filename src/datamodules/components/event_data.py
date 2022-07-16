@@ -3,7 +3,7 @@ from transformers import BertTokenizerFast
 class EventDataSequence(torch.utils.data.Dataset):
     def __init__(
         self, 
-        df, 
+        df,
         tokenizer_kwargs={
             'padding':'max_length', 
             'max_length':30, 
@@ -16,24 +16,26 @@ class EventDataSequence(torch.utils.data.Dataset):
         self.label_all_tokens = label_all_tokens
         self.tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
         
-        # import the data
-        label = df['labels'].apply(lambda x: x.split()).to_list()
-        texts  = df['event_names'].values.tolist()
+        # import the labels
+        labels = df['labels'].apply(lambda x: x.split()).to_list()
 
-        # Create a column for the tokenized inputs 
-        self.text = df['event_names'].apply(lambda x: self.tokenizer(str(x), **tokenizer_kwargs)).to_list()
-        self.labels = [self.align_label(i,j) for i,j in zip(self.text, label)]
-        
         # create a mapping from labels to ids
         self.unique_labels = set()
 
-        for label in self.labels:
+        for label in labels:
             [self.unique_labels.add(i) for i in label if i not in self.unique_labels]
         
         # Map each label into its id representation and vice versa
         self.labels_to_ids = {key: value for value, key in enumerate(sorted(self.unique_labels))}
         self.ids_to_labels = {value: key for value, key in enumerate(sorted(self.unique_labels))}
 
+        # generate the text and labels 
+        self.text = df['event_names'].apply(lambda x: self.tokenizer(str(x), **tokenizer_kwargs)).to_list()
+        self.labels = [self.align_label(i,j) for i,j in zip(self.text, labels)]
+        
+
+
+        
     def __len__(self):
         return len(self.labels)
 
@@ -49,7 +51,7 @@ class EventDataSequence(torch.utils.data.Dataset):
     def get_batch_labels(self, idx):
         return torch.LongTensor(self.labels[idx])
 
-    def align_label(self, text, label, max_length=30):
+    def align_label(self, text, label):
         """Aligns the label to the tokenized input text. 
         This is necessary because the tokenization will change the length of the label.
         
