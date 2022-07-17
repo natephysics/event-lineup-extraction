@@ -1,4 +1,0 @@
-# docs: https://pytorch.org/docs/stable/generated/torch.nn.MSELoss.html?highlight=nn#torch.nn.MSELoss
-
-BERTScore:
-  _target_: torchmetrics.BERTScore

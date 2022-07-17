@@ -6,9 +6,9 @@ defaults:
   - datamodule: bert.yaml
   - model: bert.yaml
   - callbacks: default.yaml
-  - metrics: bertscore.yaml
+  - metrics: CELoss.yaml
   - optimizer: SGD.yaml
-  - logger: null # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
+  - logger: many_loggers.yaml # set logger here or use command line (e.g. `python train.py logger=tensorboard`)
   - trainer: default.yaml
   - log_dir: default.yaml
 
