@@ -31,25 +31,26 @@ class EventDataSequence(torch.utils.data.Dataset):
 
         # generate the text and labels 
         self.text = df['event_names'].apply(lambda x: self.tokenizer(str(x), **tokenizer_kwargs)).to_list()
-        self.labels = [self.align_label(i,j) for i,j in zip(self.text, labels)]
-        
 
+        for index, (text, label) in enumerate(zip(self.text, labels)):
+            label_tensor = torch.tensor(self.align_label(text, label))
+            # reshape the label tensor to match the shape of the text tensor
+            self.text[index]['label'] = label_tensor[None, :]
 
         
     def __len__(self):
-        return len(self.labels)
+        return len(self.text)
+
 
     def __getitem__(self, idx):
-        batch_data = self.get_batch_data(idx)
-        batch_labels = self.get_batch_labels(idx)
+        batch = self.get_batch_data(idx)
 
-        return batch_data, batch_labels
+        return batch
+
 
     def get_batch_data(self, idx):
         return self.text[idx]
 
-    def get_batch_labels(self, idx):
-        return torch.LongTensor(self.labels[idx])
 
     def align_label(self, text, label):
         """Aligns the label to the tokenized input text. 
