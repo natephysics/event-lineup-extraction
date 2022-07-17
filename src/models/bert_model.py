@@ -45,33 +45,37 @@ class BertModel(pl.LightningModule):
 
     def forward(self, input_id, mask, label):
         """Forward pass of the model."""
-        loss, output = self.bert(input_ids=input_id, attention_mask=mask, labels=label, return_dict=False)
+        loss, logits  = self.bert(input_ids=input_id[:,0], attention_mask=mask[:,0], labels=label[:,0], return_dict=False)
 
-        return output, loss
+        return logits, loss
 
     def step(self, batch: any, batch_idx: int):
-        # get the inputs
-        data, true_label = batch
+
         # forward pass
-        output, loss = self.forward(data["input_ids"][0], data["attention_mask"][0], data["labels"][0])
-        # compute the loss
-        output_clean = output[0][output != -100]
-        label_clean = true_label[true_label != -100]
+        logits , loss = self.forward(batch["input_ids"], batch["attention_mask"], batch["label"])
+        
+        # convert the logits to predictions
+        predictions = logits.argmax(dim=2)[:,None,:]
 
-        predictions = output_clean.argmax(dim=1)
+        # We only want predictions for the values not = -100
+        predictions_clean = predictions[batch["label"] != -100]
 
-        acc = (predictions == label_clean).float().mean()
-        self.log("train/acc", acc)
+        # We only want labels for the values not = -100
+        label_clean = batch["label"][batch["label"] != -100]
 
+        acc = (predictions_clean == label_clean).float().mean()
 
         if torch.isnan(loss):
             print('Issue')
-        return loss, predictions, label_clean
+        return loss, acc, predictions, label_clean
 
     def training_step(self, batch, batch_idx):
-        loss, pred_label, true_label = self.step(batch, batch_idx)
+        loss, acc, pred_label, true_label = self.step(batch, batch_idx)
+        
+        # log the loss and accuracy
         self.log("train/loss", loss, prog_bar=True, logger=True)
-
+        self.log("train/acc", acc, prog_bar=True, logger=True)
+        
         # log training metrics (if enabled)
         if self.log_training:
             self.train_metrics(pred_label, true_label)
@@ -86,13 +90,21 @@ class BertModel(pl.LightningModule):
         return {"loss": loss, "predictions": pred_label, "labels": true_label}
 
     def validation_step(self, batch: any, batch_idx: int):
-        loss, pred_label, true_label = self.step(batch, batch_idx)
+        loss, acc, pred_label, true_label = self.step(batch, batch_idx)
+        
+        # log the loss and accuracy
         self.log("val/loss", loss, prog_bar=True, logger=True)
+        self.log("val/acc", acc, prog_bar=True, logger=True)
+
         return loss
 
     def test_step(self, batch: any, batch_idx: int):
-        loss, pred_label, true_label = self.step(batch, batch_idx)
+        loss, acc, pred_label, true_label = self.step(batch, batch_idx)
+
+        # log the loss and accuracy
         self.log("test/loss", loss, prog_bar=True, logger=True)
+        self.log("test/acc", acc, prog_bar=True, logger=True)
+
         return loss
         
     def configure_optimizers(self):
