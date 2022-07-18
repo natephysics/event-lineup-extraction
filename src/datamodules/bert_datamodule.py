@@ -30,9 +30,9 @@ class BertDataModule(LightningDataModule):
         self.batch_size = batch_size
         self.train_val_split = train_val_split
         self.data_dir = data_dir
-        self.data_train_data = None,
-        self.data_val_data = None,
-        self.data_test_data = None,
+        self.data_train = None,
+        self.data_val = None,
+        self.data_test = None,
 
         # set the seed for random numbers to the system default, otherwise 42
         try: 
@@ -46,19 +46,18 @@ class BertDataModule(LightningDataModule):
             data_path = path.join(self.data_dir, "train_data.csv")
             data = pd.read_csv(data_path, sep='\t', dtype = str)
             data_train, data_val = split(data.sample(frac=1, random_state=self.seed), [int(len(data) * self.train_val_split)])
-            self.data_train_data = EventDataSequence(data_train)
-            self.data_val_data = EventDataSequence(data_val)
+            self.data_train = EventDataSequence(data_train)
+            self.data_val = EventDataSequence(data_val)
 
         if stage == "test":
             data_path = path.join(self.data_dir, "test_data.csv")
             data = pd.read_csv(data_path, sep='\t', dtype = str)
-            data = self.prepare_data("test")
-            self.data_test_data = EventDataSequence(data.sample(frac=1, random_state=self.seed))
+            self.data_test = EventDataSequence(data.sample(frac=1, random_state=self.seed))
         return super().setup(stage)
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         return DataLoader(
-            self.data_train_data,
+            self.data_train,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
@@ -67,7 +66,7 @@ class BertDataModule(LightningDataModule):
 
     def val_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(
-            self.data_val_data,
+            self.data_val,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
@@ -76,7 +75,7 @@ class BertDataModule(LightningDataModule):
     
     def test_dataloader(self) -> EVAL_DATALOADERS:
         return DataLoader(
-            self.data_test_data,
+            self.data_test,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory,
