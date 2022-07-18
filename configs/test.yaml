@@ -3,13 +3,12 @@
 # specify here default evaluation configuration
 defaults:
   - _self_
-  - datamodule: mnist.yaml # choose the datamodule for evaluation
-  - model: mnist.yaml
+  - datamodule: bert.yaml # choose the datamodule for evaluation
+  - model: bert.yaml
   - callbacks: null
   - logger: null
   - trainer: default.yaml
   - log_dir: evaluation.yaml
-
   - experiment: null
 
   # enable color logging
@@ -24,9 +23,9 @@ print_config: True
 
 ignore_warnings: True
 
-seed: null
+seed: 3435
 
 name: "default"
 
 # passing checkpoint path is necessary
-ckpt_path: ???
+ckpt_path: ${original_work_dir}/logs/experiments/ckpts/best.ckpt
