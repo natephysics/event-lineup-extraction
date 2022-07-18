@@ -49,7 +49,7 @@ def train(config: DictConfig) -> Optional[float]:
     datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule, config.data_dir)
     datamodule.setup("fit")
     # get the number of labels
-    num_labels = len(datamodule.data_train_data.unique_labels)
+    num_labels = len(datamodule.data_train.unique_labels)
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
