@@ -6,6 +6,8 @@ from torchmetrics import MetricCollection
 from typing import Optional, List
 from src.utils import instantiate_list
 import torch
+import hydra
+import pandas as pd
 
 class BertModel(pl.LightningModule):
 
@@ -35,13 +37,18 @@ class BertModel(pl.LightningModule):
 
         # define "lr" as attribute to leverage pl learning rate tuner
         self.optimizer = optimizer
-        self.lr = optimizer.lr
+        self.lr = optimizer.lr if hasattr(optimizer, "lr") else None
+        self.scheduler = scheduler
+        self.log_training = log_training
 
         #  Whether to log gradient and weights during training
         self.log_training = log_training        
 
         # scheduler
         self.scheduler = scheduler
+
+        # create a df for doing some post analysis
+        self.test_results = pd.DataFrame(columns=['input_ids', 'label', 'predictions', 'attention_mask', 'token_type_ids'])
 
     def forward(self, input_id, mask, label):
         """Forward pass of the model."""
@@ -67,18 +74,18 @@ class BertModel(pl.LightningModule):
 
         if torch.isnan(loss):
             print('Issue')
-        return loss, acc, predictions, label_clean
+        return loss, acc, logits, predictions
 
     def training_step(self, batch, batch_idx):
-        loss, acc, pred_label, true_label = self.step(batch, batch_idx)
+        loss, acc, logits, predictions = self.step(batch, batch_idx)
         
         # log the loss and accuracy
-        self.log("train/loss", loss, prog_bar=True, logger=True)
+        self.log("train/loss")
         self.log("train/acc", acc, prog_bar=True, logger=True)
         
         # log training metrics (if enabled)
         if self.log_training:
-            self.train_metrics(pred_label, true_label)
+            self.train_metrics(predictions, batch['label'])
             self.log_dict(self.train_metrics)
             for layer, param in self.named_parameters():
                 self.logger.experiment.add_histogram(
@@ -87,10 +94,10 @@ class BertModel(pl.LightningModule):
                 if batch_idx != 0:
                     self.log(f"train/{layer}.max_grad", torch.max(param.grad))
 
-        return {"loss": loss, "predictions": pred_label, "labels": true_label}
+        return {"loss": loss, "predictions": predictions, "labels": batch['label']}
 
     def validation_step(self, batch: any, batch_idx: int):
-        loss, acc, pred_label, true_label = self.step(batch, batch_idx)
+        loss, acc, logits, predictions = self.step(batch, batch_idx)
         
         # log the loss and accuracy
         self.log("val/loss", loss, prog_bar=True, logger=True)
@@ -99,12 +106,22 @@ class BertModel(pl.LightningModule):
         return loss
 
     def test_step(self, batch: any, batch_idx: int):
-        loss, acc, pred_label, true_label = self.step(batch, batch_idx)
+        loss, acc, logits, predictions = self.step(batch, batch_idx)
+
+
+        results = {**batch, "predictions": logits}
+
+        for key, _ in results.items():
+            results[key] = results[key].cpu().numpy()
+            results[key] = [row for row in results[key]]
+
+        # self.test_results
+        self.test_results = self.test_results.append(pd.DataFrame.from_dict(results), ignore_index=True)
 
         # log the loss and accuracy
         self.log("test/loss", loss, prog_bar=True, logger=True)
         self.log("test/acc", acc, prog_bar=True, logger=True)
-
+        
         return loss
         
     def configure_optimizers(self):
@@ -119,3 +136,20 @@ class BertModel(pl.LightningModule):
             return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
         else:
             return optimizer
+
+    # def compute_metrics(self, pred_label, true_label):
+        
+    #     # log training metrics (if enabled)
+    #     if self.log_training:
+    #         self.train_metrics(pred_label, true_label)
+    #         self.log_dict(self.train_metrics)
+    #         for layer, param in self.named_parameters():
+    #             self.logger.experiment.add_histogram(
+    #                 f"train/{layer}", param, global_step=self.global_step
+    #             )
+    #             if batch_idx != 0:
+    #                 self.log(f"train/{layer}.max_grad", torch.max(param.grad))
+        
+        
+        
+    #     return self.test_metrics(pred_label, true_label)

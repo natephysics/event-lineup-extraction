@@ -3,7 +3,6 @@ from msilib.schema import Component
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from src.datamodules.components.event_data import EventDataSequence
-from numpy import split
 from torch import seed
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 from typing import Optional
@@ -42,17 +41,16 @@ class BertDataModule(LightningDataModule):
             self.seed = 42
 
     def setup(self, stage: Optional[str] = None) -> None:
-        if stage == "fit":
-            data_path = path.join(self.data_dir, "train_data.csv")
-            data = pd.read_csv(data_path, sep='\t', dtype = str)
-            data_train, data_val = split(data.sample(frac=1, random_state=self.seed), [int(len(data) * self.train_val_split)])
-            self.data_train = EventDataSequence(data_train)
-            self.data_val = EventDataSequence(data_val)
 
-        if stage == "test":
-            data_path = path.join(self.data_dir, "test_data.csv")
-            data = pd.read_csv(data_path, sep='\t', dtype = str)
-            self.data_test = EventDataSequence(data.sample(frac=1, random_state=self.seed))
+        data_path = path.join(self.data_dir, "train_data.csv")
+        data = pd.read_csv(data_path, sep='\t', dtype = str)
+        # randomize the data
+        data = data.sample(frac=1, random_state=self.seed).reset_index(drop=True)
+
+        # split the data into train, val and test
+        self.data_train = EventDataSequence(data)
+        self.data_train, self.data_val = self.data_train.split(self.train_val_split)
+        self.data_train, self.data_test = self.data_train.split(self.train_val_split)
         return super().setup(stage)
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:

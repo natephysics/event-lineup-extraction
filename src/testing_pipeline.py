@@ -5,6 +5,7 @@ import hydra
 from omegaconf import DictConfig
 from pytorch_lightning import LightningDataModule, LightningModule, Trainer, seed_everything
 from pytorch_lightning.loggers import LightningLoggerBase
+import torch
 
 from src import utils
 
@@ -41,7 +42,9 @@ def test(config: DictConfig) -> None:
     log.info(f"Instantiating model <{config.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(
         config.model,
-        num_labels=num_labels
+        num_labels=num_labels,
+        metrics=config.metrics,
+        _recursive_=False, # for hydra (won't recursively instantiate criterion)
     )
 
     # Init lightning loggers
@@ -62,3 +65,5 @@ def test(config: DictConfig) -> None:
 
     log.info("Starting testing!")
     trainer.test(model=model, datamodule=datamodule, ckpt_path=config.ckpt_path)
+    model.test_results
+    print("Done!")
