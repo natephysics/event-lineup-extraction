@@ -80,7 +80,7 @@ class BertModel(pl.LightningModule):
         loss, acc, logits, predictions = self.step(batch, batch_idx)
         
         # log the loss and accuracy
-        self.log("train/loss")
+        self.log("train/loss", loss)
         self.log("train/acc", acc, prog_bar=True, logger=True)
         
         # log training metrics (if enabled)
