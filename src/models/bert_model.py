@@ -109,7 +109,7 @@ class BertModel(pl.LightningModule):
         loss, acc, logits, predictions = self.step(batch, batch_idx)
 
 
-        results = {**batch, "predictions": logits}
+        results = {**batch, "predictions": predictions}
 
         for key, _ in results.items():
             results[key] = results[key].cpu().numpy()
